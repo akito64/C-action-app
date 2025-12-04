@@ -1,0 +1,31 @@
+@model IEnumerable<AuctionSite.Models.AuctionItem>
+
+@{
+    ViewData["Title"] = "オークション一覧";
+}
+
+<h1>オークション一覧</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">新しい出品</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>タイトル</th>
+            <th>開始価格</th>
+            <th>登録日時 (UTC)</th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model)
+{
+        <tr>
+            <td>@item.Title</td>
+            <td>@item.StartPrice</td>
+            <td>@item.CreatedAt</td>
+        </tr>
+}
+    </tbody>
+</table>

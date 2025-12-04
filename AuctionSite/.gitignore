@@ -1,0 +1,17 @@
+# ビルド成果物
+**/bin/
+**/obj/
+
+# ユーザーごとの設定
+.vs/
+*.user
+*.suo
+
+# Docker 関連
+action-app_db-data/
+docker-data/
+*.log
+
+# OS ごとのゴミファイル
+.DS_Store
+Thumbs.db

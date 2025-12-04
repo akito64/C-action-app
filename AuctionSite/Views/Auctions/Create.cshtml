@@ -1,0 +1,34 @@
+@model AuctionSite.Models.AuctionItem
+
+@{
+    ViewData["Title"] = "新しい出品";
+}
+
+<h1>新しい出品</h1>
+
+<form asp-action="Create" method="post">
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="StartPrice" class="form-label"></label>
+        <input asp-for="StartPrice" class="form-control" />
+        <span asp-validation-for="StartPrice" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">登録</button>
+    <a asp-action="Index" class="btn btn-secondary">戻る</a>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
