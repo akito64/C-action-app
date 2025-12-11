@@ -10,5 +10,9 @@ namespace AuctionSite.Models
         }
 
         public DbSet<AuctionItem> AuctionItems => Set<AuctionItem>();
+        public DbSet<Bid> Bids => Set<Bid>();
+
+        // ★ 追加：ユーザー
+        public DbSet<User> Users => Set<User>();
     }
 }

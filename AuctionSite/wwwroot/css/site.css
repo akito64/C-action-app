@@ -1,31 +1,440 @@
-html {
-  font-size: 14px;
+/* ================================
+   カラーテーマ & 共通設定
+   ================================ */
+:root {
+    --bg1: #0f172a;
+    --bg2: #1e293b;
+    --accent: #4f46e5;
+    --accent-soft: rgba(79, 70, 229, 0.35);
+    --danger: #ef4444;
+    --text-main: #e5e7eb;
+    --text-sub: #f9f9f9;
+    --card-bg: rgba(15, 23, 42, 0.85);
+    --border-soft: rgba(148, 163, 184, 0.35);
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
+/* 背景をゆっくり動くグラデーションに */
 body {
-  margin-bottom: 60px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text-main);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.12), transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.12), transparent 50%),
+        linear-gradient(135deg, #020617, #020617);
+    background-size: 160% 160%;
+    animation: bg-shift 30s ease infinite;
+    min-height: 100vh;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+/* メインコンテンツをガラスカードっぽく */
+main {
+    max-width: 960px;
+    margin: 3rem auto 4rem;
+    padding: 2.5rem 2.75rem;
+    background: var(--card-bg);
+    border-radius: 24px;
+    box-shadow:
+        0 25px 60px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(148, 163, 184, 0.3);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    animation: page-in 0.7s ease-out;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+/* スクロールバーも少しだけオシャレに（Chrome系ブラウザ） */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.9);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.7);
+    border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.9);
+}
+
+/* ================================
+   ヘッダー / タイトル
+   ================================ */
+
+h1, .display-4 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    margin-bottom: 1.75rem;
+    background: linear-gradient(120deg, #e5e7eb, #a5b4fc, #f9a8d4);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: title-glow 9s ease-in-out infinite;
+    text-shadow: 0 12px 35px rgba(255, 255, 255, 0.8);
+}
+
+h2, h3 {
+    color: #e5e7eb;
+    font-weight: 700;
+}
+
+/* 「オークション一覧」などの上マージンを少しだけ調整 */
+h1 + p,
+h1 + .btn {
+    margin-top: 0.5rem;
+}
+
+/* ================================
+   ボタン（光るアニメーション）
+   ================================ */
+
+.btn {
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: .03em;
+    padding: .55rem 1.2rem;
+    border-width: 1px;
+    position: relative;
+    overflow: hidden;
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+/* ホバーでふわっと持ち上がる */
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 25px rgba(15, 23, 42, 0.6);
+}
+
+/* クリック感 */
+.btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* 共通の「シャイン」エフェクト */
+.btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        115deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.32) 40%,
+        transparent 70%
+    );
+    transform: translateX(-120%);
+    opacity: 0;
+    transition: transform 0.45s ease-out, opacity 0.25s ease-out;
+}
+
+.btn:hover::before {
+    opacity: 1;
+    transform: translateX(120%);
+}
+
+/* メインアクションボタン（新しい出品など） */
+.btn-primary {
+    background: radial-gradient(circle at 0% 0%, #6366f1, #4f46e5);
+    border-color: rgba(129, 140, 248, 0.9);
+    color: white;
+    box-shadow: 0 12px 30px rgba(79, 70, 229, 0.55);
+}
+
+.btn-primary:hover {
+    background: radial-gradient(circle at 100% 0%, #818cf8, #4f46e5);
+}
+
+/* アウトラインの編集ボタンなど */
+.btn-outline-primary {
+    color: #a5b4fc;
+    border-color: rgba(129, 140, 248, 0.7);
+    background-color: rgba(15, 23, 42, 0.7);
+}
+.btn-outline-primary:hover {
+    background-color: rgba(79, 70, 229, 0.12);
+}
+
+/* 危険系ボタン（削除） */
+.btn-danger,
+.btn-outline-danger {
+    border-radius: 12px;
+    border-color: rgba(239, 68, 68, 0.9);
+}
+.btn-danger {
+    background: radial-gradient(circle at 0% 0%, #f97373, #ef4444);
+    color: #fee2e2;
+}
+.btn-danger:hover {
+    background: radial-gradient(circle at 100% 0%, #fecaca, #ef4444);
+}
+.btn-outline-danger {
+    color: #fecaca;
+    background-color: rgba(15, 23, 42, 0.7);
+}
+.btn-outline-danger:hover {
+    background-color: rgba(248, 113, 113, 0.16);
+}
+
+/* ================================
+   テーブル（オークション一覧）
+   ================================ */
+
+.table {
+    margin-top: 1.5rem;
+    color: var(--text-main);
+    border-collapse: separate;
+    border-spacing: 0 0.55rem;
+}
+
+.table thead {
+    background: linear-gradient(
+        to right,
+        rgba(15, 23, 42, 0.9),
+        rgba(15, 23, 42, 0.7)
+    );
+    border-radius: 12px;
+}
+
+.table thead th {
+    border: none;
+    padding-top: .75rem;
+    padding-bottom: .75rem;
+    font-size: .86rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-sub);
+}
+
+/* 行をカード風に */
+.table tbody tr {
+    background-color: rgba(15, 23, 42, 0.96);
+    box-shadow: 0 18px 35px rgba(15, 23, 42, 0.9);
+    border-radius: 16px;
+    overflow: hidden;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+    opacity: 0;
+    animation: row-in 0.6s ease forwards;
+}
+
+/* 順番にふわっと出てくる */
+.table tbody tr:nth-child(1) { animation-delay: .05s; }
+.table tbody tr:nth-child(2) { animation-delay: .12s; }
+.table tbody tr:nth-child(3) { animation-delay: .19s; }
+.table tbody tr:nth-child(4) { animation-delay: .26s; }
+.table tbody tr:nth-child(5) { animation-delay: .33s; }
+/* 6行目以降は同じディレイ感で増やしてもOK */
+
+.table tbody tr:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 24px 45px rgba(15, 23, 42, 0.95),
+        0 0 0 1px rgba(129, 140, 248, 0.35);
+    background: radial-gradient(
+        circle at 0% 0%,
+        rgba(79, 70, 229, 0.18),
+        rgba(15, 23, 42, 0.96)
+    );
+}
+
+.table tbody td {
+    border: none;
+    padding: .75rem 1rem;
+    vertical-align: middle;
+}
+
+/* タイトルを強調 */
+.table tbody td:first-child {
+    font-weight: 600;
+}
+
+/* 操作列のボタンを横並びに */
+.table tbody td:last-child {
+    white-space: nowrap;
+}
+
+/* 日付表示を少し弱めに */
+.table tbody td:nth-child(3) {
+    color: var(--text-sub);
+    font-size: .92rem;
+}
+
+/* ================================
+   フォーム / 入札フォーム用
+   ================================ */
+
+form {
+    margin-top: 1rem;
+}
+
+.form-label {
+    color: var(--text-sub);
+    font-size: .9rem;
+}
+
+.form-control, textarea.form-control {
+    background-color: rgba(15, 23, 42, 0.85);
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    color: var(--text-main);
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.form-control:focus, textarea.form-control:focus {
+    outline: none;
+    border-color: rgba(129, 140, 248, 0.95);
+    box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.8);
+    background-color: rgba(15, 23, 42, 0.98);
+}
+
+/* 検証エラー */
+.text-danger {
+    font-size: .84rem;
+}
+
+/* アラート（メッセージ） */
+.alert {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    box-shadow: 0 18px 30px rgba(15, 23, 42, 0.9);
+}
+.alert-danger {
+    background: rgba(248, 113, 113, 0.08);
+    border-color: rgba(248, 113, 113, 0.6);
+}
+.alert-success {
+    background: rgba(52, 211, 153, 0.08);
+    border-color: rgba(52, 211, 153, 0.6);
+}
+
+/* ================================
+   ナビバー（テンプレがあれば）
+   ================================ */
+
+.navbar {
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    background-color: rgba(15, 23, 42, 0.75) !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+}
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    font-size: .9rem;
+}
+
+/* ================================
+   アニメーション定義
+   ================================ */
+
+@keyframes bg-shift {
+    0%   { background-position: 0% 0%; }
+    50%  { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+}
+
+@keyframes page-in {
+    0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes title-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 0 rgba(129, 140, 248, 0.0));
+        background-position: 0% 50%;
+    }
+    50% {
+        filter: drop-shadow(0 0 30px rgba(129, 140, 248, 0.7));
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes row-in {
+    0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* 入力中の文字色を必ず白にする */
+input.form-control,
+textarea.form-control,
+select.form-control,
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="email"] {
+    color: #f9fafb !important;
+    background-color: rgba(15, 23, 42, 0.95);
+}
+
+/* 黒系の文字を白系に上書き */
+body,
+p,
+span,
+li,
+td,
+th,
+label,
+.form-label {
+    color: #e5e7eb;
+}
+
+/* Bootstrap の text-dark を上書き */
+.text-dark {
+    color: #ffffff !important;
+}
+
+/* テーブル内の文字も白系に */
+.table,
+.table td,
+.table th {
+    color: #060606 !important;
+}
+
+/* ナビゲーションの文字色を明るくする */
+.navbar-brand,
+.navbar-nav .nav-link {
+    color: #e5e7eb !important;
+}
+
+.navbar-brand:hover,
+.navbar-nav .nav-link:hover {
+    color: #ffffff !important;
+}
+
+/* ナビバーの右側の「ログイン／新規登録／ログアウト」ボタンを少しコンパクトに */
+.nav-auth-btn {
+    padding: 0.35rem 1.0rem;
+    font-size: 0.85rem;
+    border-radius: 999px;
+}
+
+/* スマホ幅のときは少し幅広に */
+@media (max-width: 576px) {
+    .nav-auth-btn {
+        width: 100%;
+        text-align: center;
+        margin-top: 0.25rem;
+    }
 }

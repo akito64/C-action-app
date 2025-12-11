@@ -1,0 +1,34 @@
+@model AuctionSite.Models.AuctionItem
+
+@{
+    ViewData["Title"] = "出品削除";
+}
+
+<h1>出品削除</h1>
+
+<div class="alert alert-danger">
+    <p>この出品を本当に削除してもよろしいですか？</p>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h3 class="card-title">@Model.Title</h3>
+
+        <dl class="row">
+            <dt class="col-sm-3">説明</dt>
+            <dd class="col-sm-9">@Model.Description</dd>
+
+            <dt class="col-sm-3">開始価格</dt>
+            <dd class="col-sm-9">@Model.StartPrice</dd>
+
+            <dt class="col-sm-3">登録日時 (UTC)</dt>
+            <dd class="col-sm-9">@Model.CreatedAt</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">削除する</button>
+    <a asp-action="Index" class="btn btn-secondary">キャンセル</a>
+</form>

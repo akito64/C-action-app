@@ -1,0 +1,99 @@
+@model AuctionSite.Models.ViewModels.AuctionDetailsViewModel
+
+@{
+    ViewData["Title"] = "出品詳細";
+}
+
+<h1>出品詳細</h1>
+
+@if (TempData["BidError"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["BidError"]
+    </div>
+}
+
+@if (TempData["BidMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["BidMessage"]
+    </div>
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h3 class="card-title">@Model.Item.Title</h3>
+
+        <dl class="row">
+            <dt class="col-sm-3">説明</dt>
+            <dd class="col-sm-9">@Model.Item.Description</dd>
+
+            <dt class="col-sm-3">開始価格</dt>
+            <dd class="col-sm-9">@Model.Item.StartPrice.ToString("0.00")</dd>
+
+            <dt class="col-sm-3">現在価格</dt>
+            <dd class="col-sm-9">@Model.CurrentPrice.ToString("0.00")</dd>
+
+            <dt class="col-sm-3">登録日時 (UTC)</dt>
+            <dd class="col-sm-9">@Model.Item.CreatedAt</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>入札履歴</h3>
+
+        @if (Model.Bids.Any())
+        {
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>入札者</th>
+                        <th>金額</th>
+                        <th>日時 (UTC)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var bid in Model.Bids)
+                {
+                    <tr>
+                        <td>@bid.BidderName</td>
+                        <td>@bid.Amount.ToString("0.00")</td>
+                        <td>@bid.CreatedAt</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>まだ入札はありません。</p>
+        }
+    </div>
+
+    <div class="col-md-6">
+        <h3>入札する</h3>
+        <form asp-action="PlaceBid" method="post">
+            <input type="hidden" name="auctionItemId" value="@Model.Item.Id" />
+
+            <div class="mb-3">
+                <label class="form-label">入札者名</label>
+                <input type="text" name="bidderName" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">入札金額</label>
+                <input type="number" step="1" name="amount" class="form-control" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">入札する</button>
+        </form>
+    </div>
+</div>
+
+<p class="mt-3">
+    <a asp-action="Edit" asp-route-id="@Model.Item.Id" class="btn btn-primary me-2">編集</a>
+    <a asp-action="Delete" asp-route-id="@Model.Item.Id" class="btn btn-danger me-2">削除</a>
+    <a asp-action="Index" class="btn btn-secondary">一覧に戻る</a>
+</p>

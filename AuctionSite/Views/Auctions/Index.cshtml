@@ -16,6 +16,7 @@
             <th>タイトル</th>
             <th>開始価格</th>
             <th>登録日時 (UTC)</th>
+            <th>操作</th>
         </tr>
     </thead>
     <tbody>
@@ -23,8 +24,19 @@
 {
         <tr>
             <td>@item.Title</td>
-            <td>@item.StartPrice</td>
+            <td>@item.StartPrice.ToString("0.00")</td>
             <td>@item.CreatedAt</td>
+            <td>
+                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary me-1">
+                    詳細
+                </a>
+                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary me-1">
+                    編集
+                </a>
+                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">
+                    削除
+                </a>
+            </td>
         </tr>
 }
     </tbody>

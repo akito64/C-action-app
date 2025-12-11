@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace AuctionSite.Models
@@ -18,5 +19,8 @@ namespace AuctionSite.Models
         public decimal StartPrice { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // ★ 追加：この商品の入札一覧
+        public List<Bid> Bids { get; set; } = new();
     }
 }
