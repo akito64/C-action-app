@@ -38,6 +38,17 @@
                                     @User.Identity!.Name さん
                                 </span>
                             </li>
+                            <li class="nav-item3">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Auctions" asp-action="Index">オークション一覧</a>
+                            </li>
+                            @if (User.Identity?.IsAuthenticated ?? false)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark"
+                                    asp-controller="Auctions"
+                                    asp-action="MyPage">マイページ</a>
+                                </li>
+                            }
                             <li class="nav-item">
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                     @Html.AntiForgeryToken()

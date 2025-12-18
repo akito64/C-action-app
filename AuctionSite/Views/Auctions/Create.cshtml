@@ -6,7 +6,7 @@
 
 <h1>新しい出品</h1>
 
-<form asp-action="Create" method="post">
+<form asp-action="Create" method="post" enctype="multipart/form-data">
     <div class="mb-3">
         <label asp-for="Title" class="form-label"></label>
         <input asp-for="Title" class="form-control" />
@@ -25,8 +25,19 @@
         <span asp-validation-for="StartPrice" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-primary">登録</button>
-    <a asp-action="Index" class="btn btn-secondary">戻る</a>
+    <div class="mb-3">
+        <label asp-for="EndTime" class="form-label">終了日時</label>
+        <input asp-for="EndTime" type="datetime-local" class="form-control" />
+        <span asp-validation-for="EndTime" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">商品画像</label>
+        <input type="file" name="imageFile" class="form-control" accept="image/*" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">出品する</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">戻る</a>
 </form>
 
 @section Scripts {

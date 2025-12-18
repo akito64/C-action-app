@@ -20,7 +20,17 @@ namespace AuctionSite.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // ★ 追加：この商品の入札一覧
+        //  追加: 終了日時（デフォルト3日後）
+        [DataType(DataType.DateTime)]
+        public DateTime EndTime { get; set; } = DateTime.UtcNow.AddDays(3);
+
+        //  追加: 出品者
+        public int? SellerId { get; set; }
+        public User? Seller { get; set; }
+
+        // 追加: 画像ファイル名（wwwroot/uploads 配下）
+        public string? ImageFileName { get; set; }
+
         public List<Bid> Bids { get; set; } = new();
     }
 }

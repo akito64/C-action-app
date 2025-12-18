@@ -9,9 +9,11 @@ namespace AuctionSite.Models
 
         [Required]
         public int AuctionItemId { get; set; }
-
-        // ナビゲーションプロパティ
         public AuctionItem? AuctionItem { get; set; }
+
+        // 追加: 入札者
+        public int? UserId { get; set; }
+        public User? User { get; set; }
 
         [Required]
         [StringLength(50)]

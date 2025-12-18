@@ -22,6 +22,16 @@
 
 <div class="card mb-3">
     <div class="card-body">
+        @* 画像 *@
+        @if (!string.IsNullOrEmpty(Model.Item.ImageFileName))
+        {
+            <div class="mb-3 text-center">
+                <img src="~/uploads/@Model.Item.ImageFileName"
+                     class="img-fluid rounded"
+                     style="max-height:300px; object-fit:contain;" />
+            </div>
+        }
+
         <h3 class="card-title">@Model.Item.Title</h3>
 
         <dl class="row">
@@ -34,11 +44,12 @@
             <dt class="col-sm-3">現在価格</dt>
             <dd class="col-sm-9">@Model.CurrentPrice.ToString("0.00")</dd>
 
-            <dt class="col-sm-3">登録日時 (UTC)</dt>
-            <dd class="col-sm-9">@Model.Item.CreatedAt</dd>
+            <dt class="col-sm-3">終了日時</dt>
+            <dd class="col-sm-9">@Model.Item.EndTime</dd>
         </dl>
     </div>
 </div>
+
 
 <div class="row">
     <div class="col-md-6">
@@ -72,23 +83,33 @@
         }
     </div>
 
-    <div class="col-md-6">
+<div class="col-md-6">
         <h3>入札する</h3>
-        <form asp-action="PlaceBid" method="post">
-            <input type="hidden" name="auctionItemId" value="@Model.Item.Id" />
 
-            <div class="mb-3">
-                <label class="form-label">入札者名</label>
-                <input type="text" name="bidderName" class="form-control" />
+        @if (User.Identity?.IsAuthenticated ?? false)
+        {
+            <p class="text-secondary mb-2">
+                @User.Identity!.Name さんとして入札します。
+            </p>
+
+            <form asp-action="PlaceBid" method="post">
+                <input type="hidden" name="auctionItemId" value="@Model.Item.Id" />
+
+                <div class="mb-3">
+                    <label class="form-label">入札金額</label>
+                    <input type="number" step="1" name="amount" class="form-control" />
+                </div>
+
+                <button type="submit" class="btn btn-primary">入札する</button>
+            </form>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                入札するにはログインが必要です。
+                <a asp-controller="Account" asp-action="Login">ログイン</a> してください。
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">入札金額</label>
-                <input type="number" step="1" name="amount" class="form-control" />
-            </div>
-
-            <button type="submit" class="btn btn-primary">入札する</button>
-        </form>
+        }
     </div>
 </div>
 

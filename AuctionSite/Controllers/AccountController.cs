@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AuctionSite.Models;
 using AuctionSite.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,14 +22,65 @@ namespace AuctionSite.Controllers
             _context = context;
         }
 
-        // GET: /Account/Register
+        // ===== 共通ヘルパー =====
+
+        private int? GetCurrentUserId()
+        {
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(id, out var userId))
+            {
+                return userId;
+            }
+            return null;
+        }
+
+        private bool IsAdult(DateTime birthDate)
+        {
+            var today = DateTime.Today;
+            var age = today.Year - birthDate.Year;
+            if (birthDate.Date > today.AddYears(-age))
+            {
+                age--;
+            }
+            return age >= 18;
+        }
+
+        private async Task SignInUserAsync(User user, bool isPersistent = false)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Name),
+                new Claim(ClaimTypes.Email, user.Email)
+            };
+
+            var identity = new ClaimsIdentity(
+                claims,
+                CookieAuthenticationDefaults.AuthenticationScheme);
+
+            var principal = new ClaimsPrincipal(identity);
+
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = isPersistent
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal,
+                authProperties);
+        }
+
+        // ===== 新規登録 =====
+
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Register()
         {
             return View();
         }
 
-        // POST: /Account/Register
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
@@ -37,14 +90,12 @@ namespace AuctionSite.Controllers
                 return View(model);
             }
 
-            // ★ 18歳以上チェック
             if (!IsAdult(model.BirthDate))
             {
                 ModelState.AddModelError(nameof(model.BirthDate), "18歳未満の方は登録できません。");
                 return View(model);
             }
 
-            // メールアドレス重複チェック
             if (await _context.Users.AnyAsync(u => u.Email == model.Email))
             {
                 ModelState.AddModelError(nameof(model.Email), "このメールアドレスは既に登録されています。");
@@ -62,13 +113,14 @@ namespace AuctionSite.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // 登録後そのままログイン
             await SignInUserAsync(user);
 
             return RedirectToAction("Index", "Auctions");
         }
 
-        // GET: /Account/Login
+        // ===== ログイン =====
+
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -76,7 +128,7 @@ namespace AuctionSite.Controllers
             return View();
         }
 
-        // POST: /Account/Login
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
@@ -105,7 +157,9 @@ namespace AuctionSite.Controllers
             return RedirectToAction("Index", "Auctions");
         }
 
-        // POST: /Account/Logout
+        // ===== ログアウト =====
+
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -114,43 +168,65 @@ namespace AuctionSite.Controllers
             return RedirectToAction("Index", "Auctions");
         }
 
-        // 18歳以上か判定
-        private bool IsAdult(DateTime birthDate)
+        // ===== マイページ =====
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> MyPage()
         {
-            var today = DateTime.Today;
-            var age = today.Year - birthDate.Year;
-            if (birthDate.Date > today.AddYears(-age))
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
-                age--;
+                return Challenge();
             }
-            return age >= 18;
-        }
 
-        // サインイン処理（Cookie 発行）
-        private async Task SignInUserAsync(User user, bool isPersistent = false)
-        {
-            var claims = new List<Claim>
+            var user = await _context.Users.FindAsync(userId.Value);
+            if (user == null)
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Name),
-                new Claim(ClaimTypes.Email, user.Email)
+                return NotFound();
+            }
+
+            var now = DateTime.UtcNow;
+
+            var sellingItems = await _context.AuctionItems
+                .Where(a => a.SellerId == userId)
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            var biddingItems = await _context.Bids
+                .Where(b => b.UserId == userId)
+                .Include(b => b.AuctionItem)
+                .Select(b => b.AuctionItem!)
+                .Distinct()
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            var finishedItems = await _context.AuctionItems
+                .Include(a => a.Bids)
+                .Where(a => a.EndTime <= now && a.Bids.Any())
+                .ToListAsync();
+
+            var wonItems = finishedItems
+                .Where(a =>
+                {
+                    var topBid = a.Bids
+                        .OrderByDescending(b => b.Amount)
+                        .ThenByDescending(b => b.CreatedAt)
+                        .FirstOrDefault();
+                    return topBid?.UserId == userId;
+                })
+                .OrderByDescending(a => a.EndTime)
+                .ToList();
+
+            var vm = new MyPageViewModel
+            {
+                User = user,
+                SellingItems = sellingItems,
+                BiddingItems = biddingItems,
+                WonItems = wonItems
             };
 
-            var identity = new ClaimsIdentity(
-                claims,
-                CookieAuthenticationDefaults.AuthenticationScheme);
-
-            var principal = new ClaimsPrincipal(identity);
-
-            var authProperties = new AuthenticationProperties
-            {
-                IsPersistent = isPersistent
-            };
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal,
-                authProperties);
+            return View(vm);
         }
     }
 }

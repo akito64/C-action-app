@@ -1,0 +1,108 @@
+@model AuctionSite.Models.ViewModels.MyPageViewModel
+
+@{
+    ViewData["Title"] = "マイページ";
+}
+
+<h1>マイページ</h1>
+
+<p class="text-secondary">
+    @Model.User.Name さんのアカウント
+</p>
+
+<h3 class="mt-4">出品中の商品</h3>
+@if (Model.SellingItems.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>タイトル</th>
+                <th>開始価格</th>
+                <th>終了日時</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.SellingItems)
+        {
+            <tr>
+                <td>@item.Title</td>
+                <td>@item.StartPrice.ToString("0.00")</td>
+                <td>@item.EndTime</td>
+                <td>
+                    <a asp-controller="Auctions" asp-action="Details" asp-route-id="@item.Id"
+                       class="btn btn-sm btn-outline-secondary">詳細</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>まだ出品はありません。</p>
+}
+
+<h3 class="mt-4">入札中の商品</h3>
+@if (Model.BiddingItems.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>タイトル</th>
+                <th>開始価格</th>
+                <th>終了日時</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.BiddingItems)
+        {
+            <tr>
+                <td>@item.Title</td>
+                <td>@item.StartPrice.ToString("0.00")</td>
+                <td>@item.EndTime</td>
+                <td>
+                    <a asp-controller="Auctions" asp-action="Details" asp-route-id="@item.Id"
+                       class="btn btn-sm btn-outline-secondary">詳細</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>入札中の商品はありません。</p>
+}
+
+<h3 class="mt-4">落札した商品</h3>
+@if (Model.WonItems.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>タイトル</th>
+                <th>落札終了日時</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.WonItems)
+        {
+            <tr>
+                <td>@item.Title</td>
+                <td>@item.EndTime</td>
+                <td>
+                    <a asp-controller="Auctions" asp-action="Details" asp-route-id="@item.Id"
+                       class="btn btn-sm btn-outline-secondary">詳細</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>まだ落札した商品はありません。</p>
+}

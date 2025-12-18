@@ -13,6 +13,7 @@
 <table class="table">
     <thead>
         <tr>
+            <th>画像</th>
             <th>タイトル</th>
             <th>開始価格</th>
             <th>登録日時 (UTC)</th>
@@ -23,6 +24,13 @@
 @foreach (var item in Model)
 {
         <tr>
+        <td>
+            @if (!string.IsNullOrEmpty(item.ImageFileName))
+            {
+                <img src="~/uploads/@item.ImageFileName"
+                     style="width:80px;height:60px;object-fit:cover;border-radius:8px;" />
+            }
+        </td>
             <td>@item.Title</td>
             <td>@item.StartPrice.ToString("0.00")</td>
             <td>@item.CreatedAt</td>
