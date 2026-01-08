@@ -16,14 +16,18 @@
             <th>画像</th>
             <th>タイトル</th>
             <th>開始価格</th>
-            <th>登録日時 (UTC)</th>
+            <th>登録日時 (日本時間)</th>
+            <th>ステータス</th>
             <th>操作</th>
         </tr>
     </thead>
     <tbody>
 @foreach (var item in Model)
 {
-        <tr>
+    var isEnded = item.IsEnded;
+    var remaining = item.RemainingTime;
+
+    <tr>
         <td>
             @if (!string.IsNullOrEmpty(item.ImageFileName))
             {
@@ -31,21 +35,58 @@
                      style="width:80px;height:60px;object-fit:cover;border-radius:8px;" />
             }
         </td>
-            <td>@item.Title</td>
-            <td>@item.StartPrice.ToString("0.00")</td>
-            <td>@item.CreatedAt</td>
-            <td>
-                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary me-1">
-                    詳細
-                </a>
-                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary me-1">
-                    編集
-                </a>
-                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">
-                    削除
-                </a>
-            </td>
-        </tr>
+        <td>@item.Title</td>
+        <td>@item.StartPrice.ToString("0.00")</td>
+        <td>@item.CreatedAt.AddHours(9).ToString("yyyy/MM/dd HH:mm")</td>
+        <td>
+            @if (isEnded)
+            {
+                <span class="badge bg-secondary">終了</span>
+            }
+            else
+            {
+                <span class="badge bg-success">出品中</span>
+                @if (remaining != null)
+                {
+                    <span class="ms-1 small">
+                        残り @remaining.Value.Days 日 @remaining.Value.Hours 時間
+                    </span>
+                }
+            }
+        </td>
+        <td>
+            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary me-1">
+                詳細
+            </a>
+            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary me-1">
+                編集
+            </a>
+            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">
+                削除
+            </a>
+        </td>
+    </tr>
 }
+
+@section Scripts {
+    <script>
+        // Hub に接続
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/auctionHub")
+            .withAutomaticReconnect()
+            .build();
+
+        // サーバーから "AuctionUpdated" が来たらページを再読み込み
+        connection.on("AuctionUpdated", function () {
+            // ほんの少し待ってから更新（DB反映が確実になるように）
+            setTimeout(function () {
+                location.reload();
+            }, 300);
+        });
+
+        connection.start().catch(err => console.error(err.toString()));
+    </script>
+}
+
     </tbody>
 </table>

@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
+using AuctionSite.Hubs;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +36,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddSignalR();   // ★ 追加
+
 // Cookie 認証を追加
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -122,5 +127,8 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Auctions}/{action=Index}/{id?}");
+
+app.MapHub<AuctionHub>("/auctionHub");   // ★ 追加
+
 
 app.Run();

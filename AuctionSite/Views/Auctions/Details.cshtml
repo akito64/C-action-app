@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "出品詳細";
+
+    var isEnded = Model.Item.IsEnded;
+    var remaining = Model.Item.RemainingTime;
 }
 
 <h1>出品詳細</h1>
@@ -20,7 +23,7 @@
     </div>
 }
 
-<div class="card mb-3">
+<div class="card mb-4">
     <div class="card-body">
         @* 画像 *@
         @if (!string.IsNullOrEmpty(Model.Item.ImageFileName))
@@ -34,7 +37,7 @@
 
         <h3 class="card-title">@Model.Item.Title</h3>
 
-        <dl class="row">
+        <dl class="row mt-3">
             <dt class="col-sm-3">説明</dt>
             <dd class="col-sm-9">@Model.Item.Description</dd>
 
@@ -45,14 +48,33 @@
             <dd class="col-sm-9">@Model.CurrentPrice.ToString("0.00")</dd>
 
             <dt class="col-sm-3">終了日時</dt>
-            <dd class="col-sm-9">@Model.Item.EndTime</dd>
+            <dd class="col-sm-9">
+                @Model.Item.EndTime.ToString("yyyy/MM/dd HH:mm")
+            </dd>
+
+            <dt class="col-sm-3">ステータス</dt>
+            <dd class="col-sm-9">
+                @if (isEnded)
+                {
+                    <span class="badge bg-secondary">終了</span>
+                }
+                else
+                {
+                    <span class="badge bg-success">出品中</span>
+                    @if (remaining != null)
+                    {
+                        <span class="ms-2">
+                            残り @remaining.Value.Days 日 @remaining.Value.Hours 時間
+                        </span>
+                    }
+                }
+            </dd>
         </dl>
     </div>
 </div>
 
-
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-6 mb-4">
         <h3>入札履歴</h3>
 
         @if (Model.Bids.Any())
@@ -62,7 +84,7 @@
                     <tr>
                         <th>入札者</th>
                         <th>金額</th>
-                        <th>日時 (UTC)</th>
+                        <th>日時</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -71,7 +93,7 @@
                     <tr>
                         <td>@bid.BidderName</td>
                         <td>@bid.Amount.ToString("0.00")</td>
-                        <td>@bid.CreatedAt</td>
+                        <td>@bid.CreatedAt.AddHours(9).ToString("yyyy/MM/dd HH:mm")</td>
                     </tr>
                 }
                 </tbody>
@@ -83,16 +105,23 @@
         }
     </div>
 
-<div class="col-md-6">
+    <div class="col-md-6 mb-4">
         <h3>入札する</h3>
 
-        @if (User.Identity?.IsAuthenticated ?? false)
+        @if (isEnded)
+        {
+            <div class="alert alert-secondary">
+                このオークションは終了しました。新しい入札はできません。
+            </div>
+        }
+        else if (User.Identity?.IsAuthenticated ?? false)
         {
             <p class="text-secondary mb-2">
                 @User.Identity!.Name さんとして入札します。
             </p>
 
             <form asp-action="PlaceBid" method="post">
+                @Html.AntiForgeryToken()
                 <input type="hidden" name="auctionItemId" value="@Model.Item.Id" />
 
                 <div class="mb-3">
@@ -107,14 +136,33 @@
         {
             <div class="alert alert-warning">
                 入札するにはログインが必要です。
-                <a asp-controller="Account" asp-action="Login">ログイン</a> してください。
+                <a asp-controller="Account" asp-action="Login">ログイン</a>してください。
             </div>
         }
     </div>
 </div>
 
-<p class="mt-3">
-    <a asp-action="Edit" asp-route-id="@Model.Item.Id" class="btn btn-primary me-2">編集</a>
-    <a asp-action="Delete" asp-route-id="@Model.Item.Id" class="btn btn-danger me-2">削除</a>
-    <a asp-action="Index" class="btn btn-secondary">一覧に戻る</a>
-</p>
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">一覧へ戻る</a>
+    <a asp-action="Edit" asp-route-id="@Model.Item.Id" class="btn btn-outline-primary ms-2">編集</a>
+</div>
+
+@section Scripts {
+    @* クライアント側バリデーション *@
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/auctionHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("AuctionUpdated", function () {
+            setTimeout(function () {
+                location.reload();
+            }, 300);
+        });
+
+        connection.start().catch(err => console.error(err.toString()));
+    </script>
+}

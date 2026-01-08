@@ -1,15 +1,17 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using AuctionSite.Models;
 using AuctionSite.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using System.Security.Claims;
-using System.IO;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
+using AuctionSite.Hubs;
 
 
 namespace AuctionSite.Controllers
@@ -18,6 +20,14 @@ namespace AuctionSite.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly IHubContext<AuctionHub> _hub;
+
+        public AuctionsController(AppDbContext context, IWebHostEnvironment env, IHubContext<AuctionHub> hub)
+        {
+            _context = context;
+            _env = env;
+            _hub = hub;
+        }
 
         private int? GetCurrentUserId()
         {
@@ -27,12 +37,6 @@ namespace AuctionSite.Controllers
                 return userId;
             }
             return null;
-        }
-
-        public AuctionsController(AppDbContext context, IWebHostEnvironment env)
-        {
-            _context = context;
-            _env = env;
         }
 
         // GET: /Auctions
@@ -46,6 +50,7 @@ namespace AuctionSite.Controllers
         }
 
         // GET: /Auctions/Create
+        [Authorize]
         public IActionResult Create()
         {
             return View();
@@ -60,7 +65,7 @@ namespace AuctionSite.Controllers
             var userId = GetCurrentUserId();
             if (userId == null)
             {
-                return Challenge(); // ログイン画面へ
+                return Challenge();
             }
 
             if (!ModelState.IsValid)
@@ -68,10 +73,21 @@ namespace AuctionSite.Controllers
                 return View(item);
             }
 
+            // 日本時間の「いま」
+            var nowJst = DateTime.UtcNow.AddHours(9);
+            
+            // DBには UTC を保存（今まで通り）
             item.CreatedAt = DateTime.UtcNow;
             item.SellerId = userId;
 
-            // ★ 画像アップロード処理
+            // 終了日時チェック（EndTime は日本時間で入力されている前提）
+            if (item.EndTime <= nowJst)
+            {
+                ModelState.AddModelError(nameof(item.EndTime), "終了日時は現在より後の日時を指定してください。");
+                return View(item);
+            }
+
+            // 画像アップロード
             if (imageFile != null && imageFile.Length > 0)
             {
                 var uploadsDir = Path.Combine(_env.WebRootPath, "uploads");
@@ -92,11 +108,13 @@ namespace AuctionSite.Controllers
             _context.AuctionItems.Add(item);
             await _context.SaveChangesAsync();
 
+            // ★ ここで「新しい出品が追加されたよ」と全クライアントに通知
+            await _hub.Clients.All.SendAsync("AuctionUpdated");
+
             return RedirectToAction(nameof(Index));
         }
 
-        // ★ GET: /Auctions/Details/5
-// GET: /Auctions/Details/5
+        // GET: /Auctions/Details/5
         public async Task<IActionResult> Details(int id)
         {
             var item = await _context.AuctionItems
@@ -130,7 +148,6 @@ namespace AuctionSite.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-
         public async Task<IActionResult> PlaceBid(int auctionItemId, decimal amount)
         {
             var userId = GetCurrentUserId();
@@ -146,6 +163,13 @@ namespace AuctionSite.Controllers
             if (item == null)
             {
                 return NotFound();
+            }
+
+            // 終了済みなら入札不可
+            if (item.IsEnded)
+            {
+                TempData["BidError"] = "このオークションは既に終了しています。";
+                return RedirectToAction(nameof(Details), new { id = auctionItemId });
             }
 
             var user = await _context.Users.FindAsync(userId.Value);
@@ -177,12 +201,15 @@ namespace AuctionSite.Controllers
             await _context.SaveChangesAsync();
 
             TempData["BidMessage"] = "入札が完了しました。";
+
+            // ★ 入札があったことを通知
+            await _hub.Clients.All.SendAsync("AuctionUpdated");
+
             return RedirectToAction(nameof(Details), new { id = auctionItemId });
         }
 
-
-
-                // ★ GET: /Auctions/Edit/5
+        // GET: /Auctions/Edit/5
+        [Authorize]
         public async Task<IActionResult> Edit(int id)
         {
             var item = await _context.AuctionItems.FindAsync(id);
@@ -194,11 +221,10 @@ namespace AuctionSite.Controllers
             return View(item);
         }
 
-        // ★ POST: /Auctions/Edit/5
+        // POST: /Auctions/Edit/5
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-
         public async Task<IActionResult> Edit(int id, AuctionItem item, IFormFile? imageFile)
         {
             if (id != item.Id)
@@ -211,7 +237,16 @@ namespace AuctionSite.Controllers
                 return View(item);
             }
 
-            // 画像が指定されていれば新しいファイルを保存
+            var nowJst = DateTime.UtcNow.AddHours(9);
+
+            // 終了日時チェック（日本時間）
+            if (item.EndTime <= nowJst)
+            {
+                ModelState.AddModelError(nameof(item.EndTime), "終了日時は現在より後の日時を指定してください。");
+                return View(item);
+            }
+
+            // 画像が指定されていれば新しく保存
             if (imageFile != null && imageFile.Length > 0)
             {
                 var uploadsDir = Path.Combine(_env.WebRootPath, "uploads");
@@ -249,8 +284,8 @@ namespace AuctionSite.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-
-        // ★ GET: /Auctions/Delete/5
+        // GET: /Auctions/Delete/5
+        [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
             var item = await _context.AuctionItems
@@ -264,7 +299,8 @@ namespace AuctionSite.Controllers
             return View(item);
         }
 
-        // ★ POST: /Auctions/Delete/5
+        // POST: /Auctions/Delete/5
+        [Authorize]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -279,6 +315,7 @@ namespace AuctionSite.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // マイページ
         [Authorize]
         public async Task<IActionResult> MyPage()
         {
@@ -294,7 +331,8 @@ namespace AuctionSite.Controllers
                 return NotFound();
             }
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.UtcNow.AddHours(9);   // 日本時間
+
 
             var sellingItems = await _context.AuctionItems
                 .Where(a => a.SellerId == userId)

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 
 namespace AuctionSite.Models
 {
@@ -32,5 +34,22 @@ namespace AuctionSite.Models
         public string? ImageFileName { get; set; }
 
         public List<Bid> Bids { get; set; } = new();
+
+                // ----- ここから追加: ステータス系の計算プロパティ -----
+
+        // 終了しているかどうか
+        [NotMapped]
+        public bool IsEnded => DateTime.UtcNow.AddHours(9) >= EndTime;
+
+        // 残り時間（終了していたら null）
+        [NotMapped]
+        public TimeSpan? RemainingTime
+        {
+            get
+            {
+                var nowJst = DateTime.UtcNow.AddHours(9);
+                return nowJst >= EndTime ? null : EndTime - nowJst;
+            }
+        }
     }
 }
