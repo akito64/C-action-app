@@ -208,45 +208,70 @@ namespace AuctionSite.Controllers
             return RedirectToAction(nameof(Details), new { id = auctionItemId });
         }
 
-        // GET: /Auctions/Edit/5
+
         [Authorize]
         public async Task<IActionResult> Edit(int id)
         {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                // ログインしてなければログイン画面へ
+                return Challenge();
+            }
+
             var item = await _context.AuctionItems.FindAsync(id);
             if (item == null)
             {
                 return NotFound();
             }
 
+            // ★ 出品者以外は 403
+            if (item.SellerId != userId)
+            {
+                return Forbid();
+            }
+
             return View(item);
         }
+
 
         // POST: /Auctions/Edit/5
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, AuctionItem item, IFormFile? imageFile)
+        public async Task<IActionResult> Edit(int id, AuctionItem formItem, IFormFile? imageFile)
         {
-            if (id != item.Id)
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
-                return BadRequest();
+                return Challenge();
+            }
+
+            var item = await _context.AuctionItems.FindAsync(id);
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            // ★ 出品者チェック
+            if (item.SellerId != userId)
+            {
+                return Forbid();
             }
 
             if (!ModelState.IsValid)
             {
+                // バリデーションエラー時は元の item を渡す
                 return View(item);
             }
 
-            var nowJst = DateTime.UtcNow.AddHours(9);
+            // ★ 変更を許可する項目だけ上書き
+            item.Title       = formItem.Title;
+            item.Description = formItem.Description;
+            item.StartPrice  = formItem.StartPrice;
+            item.EndTime     = formItem.EndTime;
 
-            // 終了日時チェック（日本時間）
-            if (item.EndTime <= nowJst)
-            {
-                ModelState.AddModelError(nameof(item.EndTime), "終了日時は現在より後の日時を指定してください。");
-                return View(item);
-            }
-
-            // 画像が指定されていれば新しく保存
+            // 画像アップロード処理（今までのロジックを item に対して書き換え）
             if (imageFile != null && imageFile.Length > 0)
             {
                 var uploadsDir = Path.Combine(_env.WebRootPath, "uploads");
@@ -264,36 +289,35 @@ namespace AuctionSite.Controllers
                 item.ImageFileName = fileName;
             }
 
-            try
-            {
-                _context.Update(item);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await _context.AuctionItems.AnyAsync(a => a.Id == id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
+
+        // GET: /Auctions/Delete/5
         // GET: /Auctions/Delete/5
         [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Challenge();
+            }
+
             var item = await _context.AuctionItems
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (item == null)
             {
                 return NotFound();
+            }
+
+            // ★ 出品者チェック
+            if (item.SellerId != userId)
+            {
+                return Forbid();
             }
 
             return View(item);
@@ -305,15 +329,30 @@ namespace AuctionSite.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var item = await _context.AuctionItems.FindAsync(id);
-            if (item != null)
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
-                _context.AuctionItems.Remove(item);
-                await _context.SaveChangesAsync();
+                return Challenge();
             }
+
+            var item = await _context.AuctionItems.FindAsync(id);
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            // ★ 出品者以外は削除NG
+            if (item.SellerId != userId)
+            {
+                return Forbid();
+            }
+
+            _context.AuctionItems.Remove(item);
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
+
 
         // マイページ
         [Authorize]

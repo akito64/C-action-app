@@ -55,16 +55,33 @@
             }
         </td>
         <td>
-            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary me-1">
+            <a asp-action="Details"
+            asp-route-id="@item.Id"
+            class="btn btn-sm btn-outline-secondary me-1">
                 詳細
             </a>
-            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary me-1">
-                編集
-            </a>
-            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">
-                削除
-            </a>
+
+            @{
+                var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                int currentUserId;
+                var isOwner = int.TryParse(idClaim, out currentUserId) && item.SellerId == currentUserId;
+            }
+
+            @if (isOwner)
+            {
+                <a asp-action="Edit"
+                asp-route-id="@item.Id"
+                class="btn btn-sm btn-outline-primary me-1">
+                    編集
+                </a>
+                <a asp-action="Delete"
+                asp-route-id="@item.Id"
+                class="btn btn-sm btn-outline-danger">
+                    削除
+                </a>
+            }
         </td>
+
     </tr>
 }
 

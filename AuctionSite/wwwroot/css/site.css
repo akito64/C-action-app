@@ -29,7 +29,6 @@ body {
     background-size: 160% 160%;
     animation: bg-shift 30s ease infinite;
 
-    /* ここから追加 */
     min-height: 100vh;
     margin: 0;
     display: flex;
@@ -37,16 +36,21 @@ body {
 }
 
 /* header, mainコンテンツ, footer の縦レイアウト */
+/* header, mainコンテンツ, footer の縦レイアウト */
 body > header {
     flex-shrink: 0;          /* ヘッダーは縮まない */
 }
 
+/* Bootstrap の .container を縦方向の「伸びる箱」にする */
 body > .container {
-    flex: 1 0 auto;          /* ここが余った縦スペースを全部持つ */
+    flex: 1 0 auto;          /* 余った縦スペースをここが受け持つ */
+    display: flex;           /* 中身（= main）をさらにレイアウトしやすく */
 }
 
+/* main を「画面に合わせて伸び縮みするカード」に */
 body > .container > main {
-    width: 100%;             /* main を横いっぱいに */
+    flex: 1 0 auto;
+    width: 100%;
 }
 
 body > footer {
@@ -58,14 +62,21 @@ footer.footer {
     margin-top: 2rem;
     border-top: 1px solid rgba(148, 163, 184, 0.35);
     padding: 1rem 0;
+    position: static !important;   /* 念のため：固定フッターを完全オフ */
+    bottom: auto !important;
+    width: 100%;
 }
 
 
 
+
 /* メインコンテンツをガラスカードっぽく */
+/* メインコンテンツをガラスカードっぽく + 画面に合わせて伸びる */
 main {
+    flex: 1 0 auto;               /* ★ 高さ調整のキモ */
     max-width: 960px;
-    margin: 3rem auto 4rem;
+    width: 100%;
+    margin: 3rem auto 3rem;       /* 下マージン 4rem → 3rem に少しだけ詰める */
     padding: 2.5rem 2.75rem;
     background: var(--card-bg);
     border-radius: 24px;
@@ -76,6 +87,7 @@ main {
     -webkit-backdrop-filter: blur(24px);
     animation: page-in 0.7s ease-out;
 }
+
 
 /* スクロールバーも少しだけオシャレに（Chrome系ブラウザ） */
 ::-webkit-scrollbar {
@@ -521,4 +533,3 @@ label,
 body {
     margin-bottom: 0 !important;
 }
-

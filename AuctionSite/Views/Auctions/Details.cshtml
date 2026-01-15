@@ -144,8 +144,23 @@
 
 <div class="mt-3">
     <a asp-action="Index" class="btn btn-secondary">一覧へ戻る</a>
-    <a asp-action="Edit" asp-route-id="@Model.Item.Id" class="btn btn-outline-primary ms-2">編集</a>
+
+    @{
+        var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        int currentUserId;
+        var isOwner = int.TryParse(idClaim, out currentUserId) && Model.Item.SellerId == currentUserId;
+    }
+
+    @if (isOwner)
+    {
+        <a asp-action="Edit"
+           asp-route-id="@Model.Item.Id"
+           class="btn btn-outline-primary ms-2">
+            編集
+        </a>
+    }
 </div>
+
 
 @section Scripts {
     @* クライアント側バリデーション *@
